@@ -83,7 +83,9 @@ func (ac *AdmissionController) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(resp)
+	if _, err := w.Write(resp); err != nil {
+		http.Error(w, fmt.Sprintf("fail to write response:% v", err), http.StatusInternalServerError)
+	}
 }
 
 // escapeJSONPointer escapes / in label names for JSON Pointer compliance
