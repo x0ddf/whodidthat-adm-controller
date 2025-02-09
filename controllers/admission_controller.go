@@ -94,17 +94,19 @@ func escapeJSONPointer(s string) string {
 }
 
 func ExtractUserMeta(request *admissionv1.AdmissionRequest) string {
+	fields := []string{
+		"username",    // rancher | IDP username
+		"sessionName", // AWS EKS -> username of the current session
+		"arn",         // AWS [AKS,GKE]? -> full ARN of the user
+	}
+
 	username := ""
-	extraInfo := request.UserInfo.Extra
-	if v, ok := extraInfo["username"]; ok && len(v) > 0 {
-		username = v.String()
+	for _, fieldName := range fields {
+		if v, ok := request.UserInfo.Extra[fieldName]; ok && len(v) > 0 {
+			username = v.String()
+		}
 	}
-	if v, ok := extraInfo["sessionName"]; ok && len(v) > 0 {
-		username = v.String()
-	}
-	if v, ok := extraInfo["arn"]; ok && len(v) > 0 {
-		username = v.String()
-	}
+
 	if len(username) == 0 {
 		username = request.UserInfo.Username
 	}
