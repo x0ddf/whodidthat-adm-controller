@@ -52,3 +52,45 @@ jobs:
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+  helm:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+          git config --global --add safe.directory /charts
+
+      - name: Copy LICENSE for packaging
+        run: |
+          cp ./LICENSE ./traefik/LICENSE
+
+      - name: Get chart version
+        id: chart_version
+        run: |
+          echo "CHART_VERSION=$(cat traefik-crds/Chart.yaml | awk -F"[ ',]+" '/version:/{print $2}' | head -n 1)" >> $GITHUB_OUTPUT
+
+      - name: Check if tag exists
+        id: tag_exists
+        run: |
+          TAG_EXISTS=false
+          if git tag -l | grep "${{ env.crds_tag_prefix }}${{ steps.chart_version.outputs.CHART_VERSION }}" > /dev/null ; then
+              TAG_EXISTS=true
+          fi
+          echo TAG_EXISTS=$TAG_EXISTS >> $GITHUB_OUTPUT
+      - name: Publish Helm chart to the ghcr.io registry
+        uses: appany/helm-oci-chart-releaser@v0.4.2
+        with:
+          name: traefik
+          repository: traefik/helm
+          tag: ${{ steps.chart_version.outputs.CHART_VERSION }}
+          path: ./traefik
+          registry: ghcr.io
+          registry_username: traefiker
+          registry_password: ${{ secrets.GHCR_TOKEN }}

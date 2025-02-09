@@ -2,8 +2,6 @@ module github.com/x0ddf/whodidthat-controller
 
 go 1.23.6
 
-toolchain go1.23.6
-
 require (
 	k8s.io/api v0.32.1
 	k8s.io/apimachinery v0.32.1

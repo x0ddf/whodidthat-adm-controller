@@ -1,0 +1,35 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: {{ include "whodidthat.fullname" . }}
+  labels:
+    {{- include "whodidthat.labels" . | nindent 4 }}
+  {{- if .Values.certManager.enabled }}
+  annotations:
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "whodidthat.fullname" . }}-cert
+  {{- end }}
+webhooks:
+  - name: whodidthat.{{ .Release.Namespace }}.svc
+    admissionReviewVersions: ["v1"]
+    failurePolicy: {{ .Values.webhook.failurePolicy }}
+    sideEffects: None
+    timeoutSeconds: {{ .Values.webhook.timeoutSeconds }}
+    clientConfig:
+      service:
+        name: {{ include "whodidthat.fullname" . }}
+        namespace: {{ .Release.Namespace }}
+        path: "/mutate"
+        port: {{ .Values.service.port }}
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["*"]
+        apiVersions: ["*"]
+        resources: ["*"]
+    {{- with .Values.webhook.namespaceSelector }}
+    namespaceSelector:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .Values.webhook.objectSelector }}
+    objectSelector:
+      {{- toYaml . | nindent 6 }}
+    {{- end }} 

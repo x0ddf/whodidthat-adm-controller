@@ -1,0 +1,16 @@
+{{- if .Values.certManager.enabled -}}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "whodidthat.fullname" . }}
+  labels:
+    {{- include "whodidthat.labels" . | nindent 4 }}
+spec:
+  dnsNames:
+    - {{ include "whodidthat.fullname" . }}.{{ .Release.Namespace }}.svc
+    - {{ include "whodidthat.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+  issuerRef:
+    name: {{ .Values.certManager.issuerName }}
+    kind: {{ .Values.certManager.issuerKind }}
+  secretName: {{ include "whodidthat.fullname" . }}-cert
+{{- end }} 

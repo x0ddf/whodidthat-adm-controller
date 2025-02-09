@@ -1,0 +1,55 @@
+# Default values for whodidthat controller
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/x0ddf/whodidthat-controller
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podSecurityContext: {}
+
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 65532
+
+service:
+  type: ClusterIP
+  port: 8443
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 64Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+certManager:
+  enabled: true
+  issuerName: "whodidthat-selfsigned"
+  issuerKind: "Issuer"
+
+webhook:
+  failurePolicy: Ignore
+  timeoutSeconds: 5
+  namespaceSelector: {}
+  objectSelector: {} 
