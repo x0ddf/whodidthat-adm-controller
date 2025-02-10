@@ -1,5 +1,3 @@
-# Default values for whodidthat controller
-
 replicaCount: 1
 
 image:
@@ -33,7 +31,7 @@ service:
 
 resources:
   limits:
-    cpu: 500m
+    cpu: 300m
     memory: 128Mi
   requests:
     cpu: 100m
@@ -42,11 +40,6 @@ resources:
 nodeSelector: {}
 tolerations: []
 affinity: {}
-
-certManager:
-  enabled: true
-  issuerName: "whodidthat-selfsigned"
-  issuerKind: "Issuer"
 
 webhook:
   failurePolicy: Ignore

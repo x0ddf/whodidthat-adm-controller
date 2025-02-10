@@ -23,13 +23,17 @@ spec:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
+          args:
+            - --port={{ .Values.service.port }}
+            - --tls-crt=/etc/webhook/certs/tls.crt
+            - --tls-key=/etc/webhook/certs/tls.key
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: https
-              containerPort: 8443
+              containerPort: {{ .Values.service.port }}
               protocol: TCP
           livenessProbe:
             httpGet:
@@ -45,7 +49,7 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
             - name: cert
-              mountPath: /tmp/k8s-webhook-server/serving-certs
+              mountPath: /etc/webhook/certs
               readOnly: true
       volumes:
         - name: cert

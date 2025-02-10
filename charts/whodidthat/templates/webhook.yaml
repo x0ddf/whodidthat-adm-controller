@@ -4,10 +4,8 @@ metadata:
   name: {{ include "whodidthat.fullname" . }}
   labels:
     {{- include "whodidthat.labels" . | nindent 4 }}
-  {{- if .Values.certManager.enabled }}
   annotations:
-    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "whodidthat.fullname" . }}-cert
-  {{- end }}
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "whodidthat.fullname" . }}-ca
 webhooks:
   - name: whodidthat.{{ .Release.Namespace }}.svc
     admissionReviewVersions: ["v1"]
@@ -19,7 +17,7 @@ webhooks:
         name: {{ include "whodidthat.fullname" . }}
         namespace: {{ .Release.Namespace }}
         path: "/mutate"
-        port: {{ .Values.service.port }}
+        port: 443
     rules:
       - operations: ["CREATE", "UPDATE"]
         apiGroups: ["*"]
