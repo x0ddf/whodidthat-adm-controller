@@ -108,8 +108,8 @@ func ExtractUserMeta(request *admissionv1.AdmissionRequest) string {
 
 	username := ""
 	for _, fieldName := range fields {
-		if v, ok := request.UserInfo.Extra[fieldName]; ok && len(v) > 0 {
-			username = v.String()
+		if v, ok := request.UserInfo.Extra[fieldName]; ok && len(v) > 0 && len(v[0]) > 0 {
+			username = v[0]
 		}
 	}
 
