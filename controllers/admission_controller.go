@@ -27,6 +27,57 @@ func NewAdmissionController() *AdmissionController {
 	}
 }
 
+// sanitizeLabelValue converts a username into a valid Kubernetes label value
+func sanitizeLabelValue(username string) string {
+	// Replace @ with -at- and remove any other invalid characters
+	sanitized := strings.ReplaceAll(username, "@", "_at_")
+
+	// Replace any other invalid characters with dashes
+	// Valid characters are alphanumeric, '-', '_', and '.'
+	var result strings.Builder
+	for _, r := range sanitized {
+		if (r >= 'a' && r <= 'z') ||
+			(r >= 'A' && r <= 'Z') ||
+			(r >= '0' && r <= '9') ||
+			r == '-' || r == '_' || r == '.' {
+			result.WriteRune(r)
+		} else {
+			result.WriteRune('-')
+		}
+	}
+
+	// Ensure the value starts and ends with an alphanumeric character
+	value := result.String()
+	value = strings.Trim(value, "-_.")
+
+	// If empty after sanitization, return a default value
+	if value == "" {
+		return "unknown-user"
+	}
+
+	// Kubernetes label values must be 63 characters or less
+	if len(value) > 63 {
+		return value[:63]
+	}
+
+	return value
+}
+
+func addLabelPatch(label string, value interface{}) map[string]interface{} {
+	return map[string]interface{}{
+		"op":    "add",
+		"path":  "/metadata/labels/" + escapeJSONPointer(label),
+		"value": value,
+	}
+}
+func addAnnotationPatch(annotation string, value interface{}) map[string]interface{} {
+	return map[string]interface{}{
+		"op":    "add",
+		"path":  "/metadata/annotations/" + escapeJSONPointer(annotation),
+		"value": value,
+	}
+}
+
 func (ac *AdmissionController) Handle(w http.ResponseWriter, r *http.Request) {
 	// Parse the AdmissionReview
 	admissionReview := &admissionv1.AdmissionReview{}
@@ -37,8 +88,9 @@ func (ac *AdmissionController) Handle(w http.ResponseWriter, r *http.Request) {
 	requestId := admissionReview.Request.UID
 	log.Printf("new admission request:%v", requestId)
 
-	// Get the requesting user
-	userName := ExtractUserMeta(admissionReview.Request)
+	username := ExtractUserMeta(admissionReview.Request)
+	// Get the requesting user and sanitize it
+	sanitized := sanitizeLabelValue(username)
 
 	// Create patch operations
 	var patches []map[string]interface{}
@@ -46,17 +98,10 @@ func (ac *AdmissionController) Handle(w http.ResponseWriter, r *http.Request) {
 	// Handle different operations
 	switch admissionReview.Request.Operation {
 	case admissionv1.Create:
-		patches = append(patches, map[string]interface{}{
-			"op":    "add",
-			"path":  "/metadata/labels/" + escapeJSONPointer(CreatedByLabel),
-			"value": userName,
-		})
+		patches = append(patches, addLabelPatch(CreatedByLabel, sanitized),
+			addAnnotationPatch(CreatedByLabel, username))
 	case admissionv1.Update:
-		patches = append(patches, map[string]interface{}{
-			"op":    "add",
-			"path":  "/metadata/labels/" + escapeJSONPointer(ModifiedByLabel),
-			"value": userName,
-		})
+		patches = append(patches, addLabelPatch(ModifiedByLabel, sanitized))
 	}
 
 	// Create the patch bytes
