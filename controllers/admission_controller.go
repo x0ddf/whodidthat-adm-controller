@@ -3,6 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
@@ -33,6 +34,8 @@ func (ac *AdmissionController) Handle(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("could not parse admission review: %v", err), http.StatusBadRequest)
 		return
 	}
+	requestId := admissionReview.Request.UID
+	log.Printf("new admission request:%v", requestId)
 
 	// Get the requesting user
 	userName := ExtractUserMeta(admissionReview.Request)
@@ -59,6 +62,7 @@ func (ac *AdmissionController) Handle(w http.ResponseWriter, r *http.Request) {
 	// Create the patch bytes
 	patchBytes, err := json.Marshal(patches)
 	if err != nil {
+		log.Printf("fail to process request with id:%v", requestId)
 		http.Error(w, fmt.Sprintf("could not marshal patch: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -78,13 +82,15 @@ func (ac *AdmissionController) Handle(w http.ResponseWriter, r *http.Request) {
 	admissionReview.Response = admissionResponse
 	resp, err := json.Marshal(admissionReview)
 	if err != nil {
+		log.Printf("fail to process request with id:%v", requestId)
 		http.Error(w, fmt.Sprintf("could not marshal response: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	if _, err := w.Write(resp); err != nil {
-		http.Error(w, fmt.Sprintf("fail to write response:% v", err), http.StatusInternalServerError)
+		log.Printf("fail to process request with id:%v", requestId)
+		http.Error(w, fmt.Sprintf("fail to write response:%v", err), http.StatusInternalServerError)
 	}
 }
 
