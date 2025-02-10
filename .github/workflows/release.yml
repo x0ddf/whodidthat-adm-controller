@@ -69,12 +69,12 @@ jobs:
 
       - name: Copy LICENSE for packaging
         run: |
-          cp ./LICENSE ./traefik/LICENSE
+          cp ./LICENSE ./charts/whodidthat/LICENSE
 
       - name: Get chart version
         id: chart_version
         run: |
-          echo "CHART_VERSION=$(cat traefik-crds/Chart.yaml | awk -F"[ ',]+" '/version:/{print $2}' | head -n 1)" >> $GITHUB_OUTPUT
+          echo "CHART_VERSION=$(cat ./charts/whodidthat/Chart.yaml | awk -F"[ ',]+" '/version:/{print $2}' | head -n 1)" >> $GITHUB_OUTPUT
 
       - name: Check if tag exists
         id: tag_exists
