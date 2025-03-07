@@ -108,6 +108,13 @@ func (ac *AdmissionController) Handle(w http.ResponseWriter, r *http.Request) {
 				"value": map[string]string{},
 			})
 		}
+		if ok && metadata["annotations"] == nil {
+			patches = append(patches, map[string]interface{}{
+				"op":    "add",
+				"path":  "/metadata/annotations",
+				"value": map[string]string{},
+			})
+		}
 	}
 
 	// Handle different operations
