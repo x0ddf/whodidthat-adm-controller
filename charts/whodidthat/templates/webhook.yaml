@@ -19,10 +19,26 @@ webhooks:
         path: "/mutate"
         port: 443
     rules:
+      # Handle built-in resources
       - operations: ["CREATE", "UPDATE"]
-        apiGroups: ["*"]
-        apiVersions: ["*"]
-        resources: ["*"]
+        apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods", "services", "configmaps", "secrets"]
+        scope: "Namespaced"
+      # Handle CRDs themselves
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["apiextensions.k8s.io"]
+        apiVersions: ["v1"]
+        resources: ["customresourcedefinitions"]
+      # Handle all custom resources dynamically
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["*"]  # All API groups
+        apiVersions: ["*"]  # All API versions
+        resources: ["*"]  # All resources
+{{/*      - operations: ["CREATE", "UPDATE"]*/}}
+{{/*        apiGroups: ["*"]*/}}
+{{/*        apiVersions: ["*"]*/}}
+{{/*        resources: ["*"]*/}}
     {{- with .Values.webhook.namespaceSelector }}
     namespaceSelector:
       {{- toYaml . | nindent 6 }}
