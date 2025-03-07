@@ -95,6 +95,19 @@ func (ac *AdmissionController) Handle(w http.ResponseWriter, r *http.Request) {
 	// Create patch operations
 	var patches []map[string]interface{}
 
+	// Check if we need to add the labels field first
+	var obj map[string]interface{}
+	if err := json.Unmarshal(admissionReview.Request.Object.Raw, &obj); err == nil {
+		metadata, ok := obj["metadata"].(map[string]interface{})
+		if ok && metadata["labels"] == nil {
+			patches = append(patches, map[string]interface{}{
+				"op":    "add",
+				"path":  "/metadata/labels",
+				"value": map[string]string{},
+			})
+		}
+	}
+
 	// Handle different operations
 	switch admissionReview.Request.Operation {
 	case admissionv1.Create:
@@ -137,29 +150,19 @@ func (ac *AdmissionController) Handle(w http.ResponseWriter, r *http.Request) {
 		log.Printf("fail to process request with id:%v", requestId)
 		http.Error(w, fmt.Sprintf("fail to write response:%v", err), http.StatusInternalServerError)
 	}
+
+	log.Printf("Processing request: operation=%s, user=%s, resource=%s/%s",
+		admissionReview.Request.Operation,
+		sanitized,
+		admissionReview.Request.Resource.Resource,
+		admissionReview.Request.Name)
+
+	log.Printf("Successfully processed request: applied %d patches", len(patches))
 }
 
 // escapeJSONPointer escapes / in label names for JSON Pointer compliance
 func escapeJSONPointer(s string) string {
-	return strings.ReplaceAll(s, "/", "~1")
-}
-
-func ExtractUserMeta(request *admissionv1.AdmissionRequest) string {
-	fields := []string{
-		"username",    // rancher | IDP username
-		"sessionName", // AWS EKS -> username of the current session
-		"arn",         // AWS [AKS,GKE]? -> full ARN of the user
-	}
-
-	username := ""
-	for _, fieldName := range fields {
-		if v, ok := request.UserInfo.Extra[fieldName]; ok && len(v) > 0 && len(v[0]) > 0 {
-			username = v[0]
-		}
-	}
-
-	if len(username) == 0 {
-		username = request.UserInfo.Username
-	}
-	return username
+	s = strings.ReplaceAll(s, "~", "~0")
+	s = strings.ReplaceAll(s, "/", "~1")
+	return s
 }
