@@ -17,6 +17,8 @@ const (
 	ModifiedByLabel = "audit.k8s.io/last-modified-by"
 )
 
+var FallBackResponse = &admissionv1.AdmissionResponse{Allowed: true}
+
 type AdmissionController struct {
 	decoder runtime.Decoder
 }
@@ -116,24 +118,21 @@ func (ac *AdmissionController) Handle(w http.ResponseWriter, r *http.Request) {
 	case admissionv1.Update:
 		patches = append(patches, addLabelPatch(ModifiedByLabel, sanitized))
 	}
-
-	// Create the patch bytes
-	patchBytes, err := json.Marshal(patches)
-	if err != nil {
-		log.Printf("fail to process request with id:%v", requestId)
-		http.Error(w, fmt.Sprintf("could not marshal patch: %v", err), http.StatusInternalServerError)
-		return
-	}
-
 	// Create the admission response
 	admissionResponse := &admissionv1.AdmissionResponse{
 		UID:     admissionReview.Request.UID,
 		Allowed: true,
-		Patch:   patchBytes,
-		PatchType: func() *admissionv1.PatchType {
+	}
+	// Create the patch bytes
+
+	if patchBytes, err := json.Marshal(patches); err == nil {
+		admissionResponse.Patch = patchBytes
+		admissionResponse.PatchType = func() *admissionv1.PatchType {
 			pt := admissionv1.PatchTypeJSONPatch
 			return &pt
-		}(),
+		}()
+	} else {
+		log.Printf("fail to process request with id:%v", requestId)
 	}
 
 	// Return the admission review

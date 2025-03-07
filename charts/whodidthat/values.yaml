@@ -2,8 +2,8 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/x0ddf/whodidthat-adm-controller
-  pullPolicy: IfNotPresent
-  tag: ""
+  pullPolicy: Always
+  tag: latest
 
 imagePullSecrets: []
 nameOverride: ""
@@ -40,6 +40,11 @@ resources:
 nodeSelector: {}
 tolerations: []
 affinity: {}
+
+cert-manager:
+  enabled: false
+  crds:
+    enabled: true
 
 webhook:
   failurePolicy: Ignore
