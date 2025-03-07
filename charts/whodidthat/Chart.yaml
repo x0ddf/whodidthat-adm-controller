@@ -2,8 +2,8 @@ apiVersion: v2
 name: whodidthat
 description: A Kubernetes admission controller that tracks resource creation and modification
 type: application
-version: 0.1.5
-appVersion: 0.1.5
+version: 0.1.9
+appVersion: 0.1.9
 keywords:
   - kubernetes
   - admission-controller
