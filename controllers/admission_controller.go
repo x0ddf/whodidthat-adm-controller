@@ -120,8 +120,7 @@ func (ac *AdmissionController) Handle(w http.ResponseWriter, r *http.Request) {
 	// Handle different operations
 	switch admissionReview.Request.Operation {
 	case admissionv1.Create:
-		patches = append(patches, addLabelPatch(CreatedByLabel, sanitized),
-			addAnnotationPatch(CreatedByLabel, username))
+		patches = append(patches, addAnnotationPatch(CreatedByLabel, username))
 	case admissionv1.Update:
 		patches = append(patches, addLabelPatch(ModifiedByLabel, sanitized))
 	}
